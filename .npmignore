@@ -4,3 +4,4 @@ tests
 .vscode
 .eslintrc
 .gitignore
+.travis.yml
