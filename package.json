@@ -1,28 +1,51 @@
 {
   "name": "metar-taf",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "This package allows you to get TAF and METAR reports.",
   "repository": {
     "type": "git",
     "url": "https://github.com/kovnick/metar-taf"
   },
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha ./tests/*.tests.js",
-    "cover": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -R spec ./tests/*.tests.js"
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run tests/fetcher.integration.test.ts",
+    "cover": "vitest run --coverage",
+    "lint": "eslint src/"
   },
   "keywords": [
     "metar",
-    "taf"
+    "taf",
+    "aviation",
+    "weather",
+    "noaa",
+    "airport"
   ],
   "author": "M.Kovalevskyi",
   "license": "MIT",
   "devDependencies": {
-    "chai": "^3.5.0",
-    "coveralls": "^2.11.12",
-    "eslint": "^3.2.2",
-    "istanbul": "^0.4.4",
-    "mocha": "^3.0.1",
-    "sinon": "^1.17.5"
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.0"
   }
 }
