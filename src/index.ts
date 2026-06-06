@@ -1,3 +1,2 @@
-export { Fetcher } from './fetcher';
-export { MetarFetcher } from './metarFetcher';
-export { TafFetcher } from './tafFetcher';
+export { getMetar, getDecodedMetar } from './metarFetcher';
+export { getTaf } from './tafFetcher';

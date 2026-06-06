@@ -1,25 +1,26 @@
 import https from 'https';
-import { Fetcher } from './fetcher';
+import { sendRequest } from './fetcher';
 
-export class MetarFetcher extends Fetcher {
-  private readonly optionsTpl: https.RequestOptions = {
-    host: 'tgftp.nws.noaa.gov',
-    path: '/data/observations/metar/{mode}/{station}.TXT',
-  };
+const optionsTpl: https.RequestOptions & { path: string } = {
+  host: 'tgftp.nws.noaa.gov',
+  path: '/data/observations/metar/{mode}/{station}.TXT',
+  timeout: 10_000,
+};
 
-  getData(station: string): Promise<string> {
-    const options = { ...this.optionsTpl };
-    options.path = options.path!
+export function getMetar(station: string): Promise<string> {
+  return sendRequest({
+    ...optionsTpl,
+    path: optionsTpl.path
       .replace('{mode}', 'stations')
-      .replace('{station}', station);
-    return this.sendRequest(options);
-  }
+      .replace('{station}', station),
+  });
+}
 
-  getDecodedData(station: string): Promise<string> {
-    const options = { ...this.optionsTpl };
-    options.path = options.path!
+export function getDecodedMetar(station: string): Promise<string> {
+  return sendRequest({
+    ...optionsTpl,
+    path: optionsTpl.path
       .replace('{mode}', 'decoded')
-      .replace('{station}', station);
-    return this.sendRequest(options);
-  }
+      .replace('{station}', station),
+  });
 }

@@ -1,26 +1,46 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { Fetcher } from '../src/fetcher';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { sendRequest } from '../src/fetcher';
+import https from 'https';
+import { EventEmitter } from 'events';
 
-describe('Fetcher', () => {
-  let fetcher: Fetcher;
-
-  beforeAll(() => {
-    fetcher = new Fetcher();
+describe('sendRequest', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('returns METAR data containing station code', { timeout: 10000 }, async () => {
-    const result = await fetcher.sendRequest({
-      host: 'tgftp.nws.noaa.gov',
-      path: '/data/observations/metar/stations/UKBB.TXT',
+  it('resolves with the response body on a 2xx response', async () => {
+    const mockRes = Object.assign(new EventEmitter(), { statusCode: 200, resume: vi.fn() });
+    vi.spyOn(https, 'get').mockImplementation((_opts: any, cb?: any) => {
+      cb(mockRes);
+      mockRes.emit('data', Buffer.from('UKBB METAR DATA'));
+      mockRes.emit('end');
+      return new EventEmitter() as any;
     });
-    expect(result).toContain('UKBB');
+
+    const result = await sendRequest({ host: 'example.com', path: '/' });
+    expect(result).toBe('UKBB METAR DATA');
   });
 
-  it('returns decoded METAR data containing station code', { timeout: 10000 }, async () => {
-    const result = await fetcher.sendRequest({
-      host: 'tgftp.nws.noaa.gov',
-      path: '/data/observations/metar/decoded/UKBB.TXT',
+  it('rejects with a descriptive error on a non-2xx response', async () => {
+    const mockRes = Object.assign(new EventEmitter(), { statusCode: 404, resume: vi.fn() });
+    vi.spyOn(https, 'get').mockImplementation((_opts: any, cb?: any) => {
+      cb(mockRes);
+      return new EventEmitter() as any;
     });
-    expect(result).toContain('UKBB');
+
+    await expect(sendRequest({ host: 'example.com', path: '/' }))
+      .rejects.toThrow('Request failed with status 404');
+    expect(mockRes.resume).toHaveBeenCalled();
+  });
+
+  it('rejects on a network error', async () => {
+    const mockReq = new EventEmitter() as any;
+    vi.spyOn(https, 'get').mockImplementation(() => {
+      setImmediate(() => mockReq.emit('error', new Error('ECONNREFUSED')));
+      return mockReq;
+    });
+
+    await expect(sendRequest({ host: 'example.com', path: '/' }))
+      .rejects.toThrow('ECONNREFUSED');
   });
 });

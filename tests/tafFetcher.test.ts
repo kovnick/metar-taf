@@ -1,20 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TafFetcher } from '../src/tafFetcher';
+import { getTaf } from '../src/tafFetcher';
+import { sendRequest } from '../src/fetcher';
 
-describe('TafFetcher', () => {
-  let fetcher: TafFetcher;
+vi.mock('../src/fetcher', () => ({
+  sendRequest: vi.fn(),
+}));
 
+describe('getTaf', () => {
   beforeEach(() => {
-    fetcher = new TafFetcher();
-    vi.spyOn(fetcher, 'sendRequest').mockResolvedValue('Test response');
+    vi.mocked(sendRequest).mockResolvedValue('Test response');
   });
 
-  it('getData calls sendRequest with station options', async () => {
-    const result = await fetcher.getData('UKBB');
-    expect(result).toBe('Test response');
-    expect(fetcher.sendRequest).toHaveBeenCalledWith({
+  it('getTaf builds the correct TAF path', async () => {
+    await getTaf('UKBB');
+    expect(sendRequest).toHaveBeenCalledWith({
       host: 'tgftp.nws.noaa.gov',
       path: '/data/forecasts/taf/stations/UKBB.TXT',
+      timeout: 10_000,
     });
+  });
+
+  it('rejects when sendRequest rejects', async () => {
+    vi.mocked(sendRequest).mockRejectedValueOnce(new Error('Request failed with status 404'));
+    await expect(getTaf('UKBB')).rejects.toThrow('Request failed with status 404');
   });
 });

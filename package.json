@@ -1,6 +1,6 @@
 {
   "name": "metar-taf",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "This package allows you to get TAF and METAR reports.",
   "repository": {
     "type": "git",
@@ -8,6 +8,16 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "files": [
     "dist"
   ],
@@ -15,12 +25,17 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run tests/fetcher.integration.test.ts",
     "cover": "vitest run --coverage",
     "lint": "eslint src/"
   },
   "keywords": [
     "metar",
-    "taf"
+    "taf",
+    "aviation",
+    "weather",
+    "noaa",
+    "airport"
   ],
   "author": "M.Kovalevskyi",
   "license": "MIT",

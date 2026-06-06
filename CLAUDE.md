@@ -26,28 +26,33 @@ npm run lint
 
 # Run a single test file
 npx vitest run tests/metarFetcher.test.ts
+
+# Run integration tests (requires network)
+npm run test:integration
 ```
 
 ## Architecture
 
-Three-class inheritance hierarchy in `src/`:
+Three modules in `src/`:
 
-- **`src/fetcher.ts`** — Base class. Wraps Node's `https.get` in a Promise via `sendRequest(requestOptions: https.RequestOptions): Promise<string>`. The only place that does network I/O.
-- **`src/metarFetcher.ts`** — Extends `Fetcher`. Exposes `getData(station)` (raw text) and `getDecodedData(station)` (decoded text). Builds request options for the METAR endpoint.
-- **`src/tafFetcher.ts`** — Extends `Fetcher`. Exposes `getData(station)` for the TAF endpoint.
+- **`src/fetcher.ts`** — Internal. Exports a single `sendRequest(requestOptions)` function that wraps Node's `https.get` in a Promise. The only place that does network I/O. Rejects on non-2xx HTTP status and on socket timeout (10 s, set by callers).
+- **`src/metarFetcher.ts`** — Exports `getMetar(station)` and `getDecodedMetar(station)`. Builds the NOAA METAR request options and delegates to `sendRequest`.
+- **`src/tafFetcher.ts`** — Exports `getTaf(station)`. Builds the NOAA TAF request options and delegates to `sendRequest`.
 
-`src/index.ts` re-exports all three classes. The compiled output in `dist/` is what gets published to npm (`main: dist/index.js`, `types: dist/index.d.ts`).
+`src/index.ts` re-exports the three public functions (`getMetar`, `getDecodedMetar`, `getTaf`). `sendRequest` is intentionally not re-exported — it is an implementation detail. The compiled output in `dist/` is what gets published to npm (`main: dist/index.js`, `types: dist/index.d.ts`).
 
 ## Testing Patterns
 
-Tests use **Vitest** with its built-in mocking (`vi.spyOn`).
+Tests use **Vitest** with its built-in mocking.
 
-Unit tests spy on `sendRequest` to avoid real HTTP calls:
+`tests/fetcher.test.ts` — unit tests for `sendRequest`; mock `https.get` directly via `vi.spyOn` to test success, status-code rejection, and network errors.
+
+`tests/metarFetcher.test.ts` / `tests/tafFetcher.test.ts` — mock the entire `fetcher` module via `vi.mock` to isolate URL-building logic:
 ```ts
-vi.spyOn(fetcher, 'sendRequest').mockResolvedValue('Test response');
+vi.mock('../src/fetcher', () => ({ sendRequest: vi.fn() }));
 ```
 
-`tests/fetcher.test.ts` is the exception — it makes real HTTPS calls to NOAA and has a 10 s timeout.
+`tests/fetcher.integration.test.ts` — makes real HTTPS calls to NOAA via the public functions (10 s timeout). Run via `npm run test:integration`; excluded from the default `npm test` run.
 
 ## ESLint
 
